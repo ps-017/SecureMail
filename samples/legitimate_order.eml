@@ -1,0 +1,25 @@
+From: "Acme Cloud Services" <billing@acmecloud.com>
+To: customer@example.com
+Subject: Your Monthly Acme Cloud Invoice - September 2026
+Date: Tue, 15 Sep 2026 09:15:00 +0000
+Message-ID: <inv-2026-09-8812@acmecloud.com>
+Return-Path: <billing@acmecloud.com>
+Authentication-Results: mx.example.com;
+    spf=pass smtp.mailfrom=billing@acmecloud.com;
+    dkim=pass header.i=@acmecloud.com;
+    dmarc=pass action=none header.from=acmecloud.com
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<head><title>Invoice</title></head>
+<body>
+  <h2>Thank you for your business</h2>
+  <p>Hello Customer,</p>
+  <p>Your subscription statement for September 2026 is ready to download.</p>
+  <p>Total billed: $49.00 USD to card ending in 4242.</p>
+  <p><a href="https://acmecloud.com/dashboard/billing">Access your customer billing portal</a></p>
+  <p>Best regards,<br>Acme Cloud Accounting</p>
+</body>
+</html>

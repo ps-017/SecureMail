@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}About SecureMail - Defensive Email Analysis & Threat Detection Platform{% endblock %}
+
+{% block content %}
+<div class="about-container">
+
+  <!-- Section 1: About SecureMail Project Overview -->
+  <section class="about-section-card" id="aboutSecureMail" style="max-width: 1000px; margin: 0 auto 36px auto; width: 100%; box-sizing: border-box; padding: 36px; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); background: #ffffff;">
+    <h2 style="font-size: 26px; font-weight: 700; color: #0f172a; margin-bottom: 12px; margin-top: 0;">About SecureMail</h2>
+    <div style="color: #2563eb; font-weight: 600; font-size: 15px; margin-bottom: 18px;">Defensive Email Analysis & Threat Detection Platform</div>
+
+    <p style="font-size: 0.98rem; line-height: 1.7; color: #334155; margin-bottom: 14px;">
+      SecureMail is a lightweight, protocol-level email forensic utility designed to deconstruct MIME messages, evaluate authentication signatures, and uncover evasive phishing techniques.
+    </p>
+    <p style="font-size: 0.98rem; line-height: 1.7; color: #334155; margin-bottom: 24px;">
+      Built to bridge the gap between complex enterprise secure email gateways and everyday users, SecureMail provides transparent, zero-dependency header analysis without retaining or exposing user communications.
+    </p>
+
+    <div class="competency-title" style="font-size: 0.82rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--slate-500); margin-bottom: 12px;">System Capabilities</div>
+    <div class="competency-chips-grid" style="margin-bottom: 0;">
+      <span class="competency-chip">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        RFC 5322 MIME Decomposition
+      </span>
+      <span class="competency-chip">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Cryptographic Auth Verification (SPF, DKIM, DMARC)
+      </span>
+      <span class="competency-chip">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Domain & Envelope Alignment Auditing
+      </span>
+      <span class="competency-chip">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Heuristic Threat & Social Engineering Detection
+      </span>
+      <span class="competency-chip">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        In-Memory Threat Evaluation
+      </span>
+    </div>
+  </section>
+
+  <!-- Section 2: Why SecureMail? (The Threat Landscape) -->
+  <section class="section-heading-block">
+    <h2 class="section-title-clean">Why SecureMail Was Built</h2>
+    <p class="section-subtitle-clean">Deconstructing the structural asymmetries that attackers exploit in modern messaging.</p>
+  </section>
+
+  <div class="threat-cards-grid">
+    <div class="threat-card">
+      <span class="threat-card-badge badge-blindspot">Vulnerability</span>
+      <h3>The Blind Spot</h3>
+      <p>
+        Standard email clients display only the superficial display name and subject line, completely concealing low-level routing manipulations, unauthorized relay IP hops, and spoofed envelope return paths from recipient view.
+      </p>
+    </div>
+
+    <div class="threat-card">
+      <span class="threat-card-badge badge-problem">Attack Surface</span>
+      <h3>The Problem</h3>
+      <p>
+        Modern credential phishing and Business Email Compromise (BEC) routinely bypass perimeter spam filters by abusing legitimate third-party relay infrastructure, unaligned sender addresses, or deceptive typosquatted domains.
+      </p>
+    </div>
+
+    <div class="threat-card">
+      <span class="threat-card-badge badge-solution">Our Defense</span>
+      <h3>The Solution</h3>
+      <p>
+        SecureMail delivers instant, transparent header and content decomposition. It interrogates protocol records, scores multi-vector deception cues, and isolates threats directly without requiring complex enterprise email gateways.
+      </p>
+    </div>
+  </div>
+
+  <!-- Section 3: Technical Mechanics & Detection Engine -->
+  <section class="section-heading-block">
+    <h2 class="section-title-clean">Under the Hood: Detection Pipeline</h2>
+    <p class="section-subtitle-clean">Deterministic heuristic methodology evaluating messages across multiple verification layers.</p>
+  </section>
+
+  <div class="pipeline-cards-grid">
+    <div class="pipeline-card">
+      <span class="pipeline-step-num">LAYER 01</span>
+      <h3>MIME & Protocol Parsing</h3>
+      <p>
+        Built on native Python RFC 5322 parsing standards. Extracts multi-part structures, decodes nested payloads, and isolates raw transfer encodings without external parsing overhead.
+      </p>
+    </div>
+
+    <div class="pipeline-card">
+      <span class="pipeline-step-num">LAYER 02</span>
+      <h3>Multi-Vector Risk Scoring</h3>
+      <p>
+        Employs a deterministic heuristic engine that inspects envelope mismatches (<code>From</code> vs. <code>Return-Path</code>), validates <code>Authentication-Results</code> records, and analyzes urgency triggers.
+      </p>
+    </div>
+
+    <div class="pipeline-card">
+      <span class="pipeline-step-num">LAYER 03</span>
+      <h3>IoC & Payload Extraction</h3>
+      <p>
+        Systematically parses hidden hyperlink redirects, identifies typosquatted domains or raw IP hosts, and flags high-risk attachment extensions (<code>.exe</code>, <code>.scr</code>, <code>.iso</code>, <code>.bat</code>).
+      </p>
+    </div>
+  </div>
+
+  <!-- Section 4: Privacy & Zero-Retention Security Architecture -->
+  <section class="privacy-navy-card" style="background: #0f172a; color: #ffffff; border: 2px solid #334155; border-radius: 10px; padding: 32px; text-align: center; max-width: 1000px; margin: 0 auto 36px auto; width: 100%; box-sizing: border-box;">
+    <div class="privacy-badge">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      Security Architecture
+    </div>
+    <h2 class="privacy-heading">Privacy First: In-Memory Analysis</h2>
+
+    <div class="privacy-highlights-grid">
+      <div class="privacy-highlight-item">
+        <h4>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Zero Data Persistence
+        </h4>
+        <p>
+          Emails and <code>.eml</code> files are processed strictly in volatile memory (RAM) and immediately discarded post-analysis.
+        </p>
+      </div>
+
+      <div class="privacy-highlight-item">
+        <h4>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          No Database or Telemetry Logging
+        </h4>
+        <p>
+          No user content, headers, recipient lists, or extracted links are ever written to disk or third-party servers.
+        </p>
+      </div>
+
+      <div class="privacy-highlight-item">
+        <h4>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Local-First Verification
+        </h4>
+        <p>
+          Analysis executes entirely on the local application instance, preventing accidental credential or sensitive data leakage.
+        </p>
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

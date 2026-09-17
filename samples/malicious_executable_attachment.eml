@@ -1,0 +1,26 @@
+From: "Global Payroll Office" <payroll@corporate-secure-mail.club>
+To: employee@company.com
+Subject: Overdue Direct Deposit Update & Wire Transfer Form
+Date: Tue, 15 Sep 2026 14:10:00 +0000
+Message-ID: <payroll.1102@corporate-secure-mail.club>
+Return-Path: <spammer@evil-relay.club>
+Authentication-Results: mx.company.com;
+    spf=fail smtp.mailfrom=spammer@evil-relay.club;
+    dmarc=fail header.from=corporate-secure-mail.club
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="----=_NextPart_001_1892"
+
+------=_NextPart_001_1892
+Content-Type: text/plain; charset="utf-8"
+
+Immediate action required regarding your direct deposit payroll update.
+Please execute the attached setup application to confirm banking details.
+
+------=_NextPart_001_1892
+Content-Type: application/x-msdownload
+Content-Disposition: attachment; filename="Payroll_Update_Form.pdf.exe"
+Content-Transfer-Encoding: base64
+
+TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAA=
+------=_NextPart_001_1892--

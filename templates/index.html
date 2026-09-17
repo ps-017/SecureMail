@@ -1,0 +1,669 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if result %}
+  Analysis: {{ result.verdict }} (Score {{ result.threat_score }}/100) - SecureMail
+{% else %}
+  SecureMail - Email Security & Threat Analysis
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<!-- 1. Main Scanner Section: Email Analyzer -->
+<section class="card" id="analyzerCard" style="width: 100%; max-width: 100%; margin: 0 auto 2.25rem; box-sizing: border-box;">
+  <div class="card-header">
+    <div>
+      <h2 class="card-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+        Email Analyzer
+      </h2>
+      <p class="card-subtitle">Upload a raw .eml file or paste MIME headers to analyze authentication and threat indicators.</p>
+    </div>
+  </div>
+
+  <div class="card-body">
+
+    {% if error %}
+    <div style="background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 0.9rem 1.25rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <form id="scanForm" action="/" method="POST" enctype="multipart/form-data" onsubmit="handleFormSubmit()">
+
+      <!-- Drag & Drop Dropzone for .eml Files -->
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="emailFileInput" name="email_file" accept=".eml,.txt,message/rfc822">
+        <svg class="dropzone-icon" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <div class="dropzone-text-primary">Drop .eml file here or click to browse</div>
+        <div class="dropzone-text-secondary">Standard RFC 822 / MIME format exported from Outlook, Gmail, Apple Mail, or Thunderbird</div>
+        <div class="file-selected-indicator" id="fileIndicator"></div>
+      </div>
+
+      <!-- Collapsible / Toggle Raw MIME Text Area -->
+      <div class="accordion-wrapper">
+        <button type="button" class="accordion-toggle-btn" id="accordionBtn" onclick="toggleAccordion()">
+          <span style="display: flex; align-items: center; gap: 0.5rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            Or paste raw email headers / text
+          </span>
+          <span id="accordionArrow">&darr;</span>
+        </button>
+        <div class="accordion-content" id="accordionContent">
+          <textarea
+            id="rawEmailTextarea"
+            name="raw_email"
+            class="raw-textarea"
+            placeholder="Paste raw email source code with headers here...&#10;&#10;From: &quot;Support Team&quot; <alert@bank-update.xyz>&#10;Return-Path: <bounce@unrelated-server.top>&#10;Subject: Urgent: Verify your credentials&#10;Authentication-Results: mx.example.com; dkim=fail; dmarc=fail&#10;...&#10;Click here: http://192.168.1.1/login"
+          >{{ raw_input or '' }}</textarea>
+        </div>
+      </div>
+
+      <!-- Quick Test Scenarios -->
+      <div class="sample-bar">
+        <span class="sample-label">Quick Test Scenarios:</span>
+        <button type="button" class="sample-chip" onclick="loadSample('legitimate')">Legitimate Transactional</button>
+        <button type="button" class="sample-chip" onclick="loadSample('phishing_suspension')">Urgent Phishing & Deceptive Link</button>
+        <button type="button" class="sample-chip" onclick="loadSample('malicious_attachment')">Executable Invoice Attachment</button>
+        <button type="button" class="sample-chip" onclick="loadSample('spam_promo')">Promotional Prize Spam</button>
+      </div>
+
+      <!-- Actions Bar -->
+      <div class="actions-bar">
+        <button type="button" class="btn-clear" onclick="clearInputs()">Clear</button>
+        <button type="submit" class="btn-navy" id="scanBtn">
+          <span class="spinner-icon" id="submitSpinner"></span>
+          <svg width="18" height="18" id="submitIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <span id="btnText">Scan Email</span>
+        </button>
+      </div>
+
+    </form>
+  </div>
+</section>
+
+<!-- Inline Results Section (Appears below the analyzer once scanned) -->
+{% if result %}
+<div class="section-divider">
+  <span class="section-divider-text">Threat Analysis Results</span>
+</div>
+
+<section class="result-section" id="results">
+
+  <!-- Verdict Banner Card -->
+  <div class="verdict-hero">
+    <div class="verdict-summary-left">
+      <div class="verdict-label-meta">Security Assessment Verdict</div>
+      <div class="verdict-pill-display {{ result.verdict_badge_class }}">
+        {% if result.verdict == 'LEGITIMATE' %}
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        LEGITIMATE
+        {% elif result.verdict == 'SPAM' %}
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        SPAM
+        {% else %}
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        PHISHING
+        {% endif %}
+      </div>
+      <p class="verdict-rationale">{{ result.rationale }}</p>
+    </div>
+
+    <!-- Threat Score Box -->
+    <div class="verdict-score-box">
+      <div class="verdict-label-meta">Calculated Threat Score</div>
+      <div>
+        <span class="score-number">{{ result.threat_score }}</span>
+        <span class="score-denom">/ 100</span>
+      </div>
+      <div class="score-level-text" style="color: {% if result.threat_score >= 50 %}#991b1b{% elif result.threat_score >= 25 %}#92400e{% else %}#166534{% endif %};">
+        {{ result.threat_level }}
+      </div>
+      <div class="score-bar-track">
+        <div class="score-bar-fill" style="width: {{ result.threat_score }}%; background-color: {% if result.threat_score >= 50 %}#ef4444{% elif result.threat_score >= 25 %}#f59e0b{% else %}#22c55e{% endif %};"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2-Column Extracted Details & Red Flags Grid -->
+  <div class="dashboard-grid">
+
+    <!-- Column 1: Headers & Authentication -->
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-header">
+        <h3 class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="20" rx="2" ry="2"/><line x1="7" y1="2" x2="7" y2="22"/>
+          </svg>
+          Email Headers & Authentication
+        </h3>
+        {% if filename %}
+        <span style="font-size: 0.78rem; font-weight: 600; color: var(--slate-500); background: #f1f5f9; padding: 0.2rem 0.6rem; border-radius: var(--radius-pill);">
+          {{ filename }}
+        </span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <table class="metadata-table">
+          <tbody>
+            <tr>
+              <th>From</th>
+              <td>{{ result.headers.From }}</td>
+            </tr>
+            <tr>
+              <th>Return-Path</th>
+              <td>{{ result.headers['Return-Path'] }}</td>
+            </tr>
+            <tr>
+              <th>Reply-To</th>
+              <td>{{ result.headers['Reply-To'] }}</td>
+            </tr>
+            <tr>
+              <th>Subject</th>
+              <td style="font-family: inherit; font-weight: 600;">{{ result.headers.Subject }}</td>
+            </tr>
+            <tr>
+              <th>Date</th>
+              <td style="font-family: inherit;">{{ result.headers.Date }}</td>
+            </tr>
+            <tr>
+              <th>Authentication</th>
+              <td>
+                <div class="auth-badges">
+                  <span class="auth-tag {% if result.auth_status.spf == 'pass' %}auth-pass{% elif result.auth_status.spf in ['fail'] %}auth-fail{% elif result.auth_status.spf == 'softfail' %}auth-softfail{% else %}auth-neutral{% endif %}">
+                    SPF: {{ result.auth_status.spf|upper }}
+                  </span>
+                  <span class="auth-tag {% if result.auth_status.dkim == 'pass' %}auth-pass{% elif result.auth_status.dkim == 'fail' %}auth-fail{% else %}auth-neutral{% endif %}">
+                    DKIM: {{ result.auth_status.dkim|upper }}
+                  </span>
+                  <span class="auth-tag {% if result.auth_status.dmarc == 'pass' %}auth-pass{% elif result.auth_status.dmarc == 'fail' %}auth-fail{% else %}auth-neutral{% endif %}">
+                    DMARC: {{ result.auth_status.dmarc|upper }}
+                  </span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <th>Attachments</th>
+              <td style="font-family: inherit;">
+                {{ result.attachments|length }} attachment(s) identified
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Column 2: Flagged Triggers & Red Flags -->
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-header">
+        <h3 class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
+          </svg>
+          Flagged Security Red Flags
+          <span style="font-size: 0.8rem; font-weight: 600; color: var(--slate-500); margin-left: 0.25rem;">({{ result.red_flags|length }})</span>
+        </h3>
+      </div>
+      <div class="card-body">
+        {% if result.red_flags %}
+        <ul class="red-flag-list">
+          {% for flag in result.red_flags %}
+          <li class="red-flag-item flag-severity-{{ flag.severity }}">
+            <div class="flag-header">
+              <span class="flag-title">{{ flag.title }}</span>
+              <span class="flag-badge {{ flag.severity }}">{{ flag.severity }} (+{{ flag.points }} pts)</span>
+            </div>
+            <p class="flag-desc">{{ flag.description }}</p>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="no-flags-box">
+          <strong>All Verification Checks Passed</strong>
+          <span>Zero spoofing, authentication anomalies, urgency lures, or dangerous payloads were detected.</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Attachments Table -->
+  <div class="card" style="margin-top: 1.75rem;">
+    <div class="card-header">
+      <h3 class="card-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+        </svg>
+        Extracted Attachments
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--slate-500); margin-left: 0.25rem;">({{ result.attachments|length }})</span>
+      </h3>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      {% if result.attachments %}
+      <div class="data-table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Filename</th>
+              <th>MIME Content Type</th>
+              <th>Size</th>
+              <th>Risk Evaluation</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for att in result.attachments %}
+            <tr>
+              <td style="font-family: var(--font-mono); font-weight: 600;">{{ att.filename }}</td>
+              <td>{{ att.content_type }}</td>
+              <td>{{ (att.size / 1024)|round(1) }} KB</td>
+              <td>
+                {% if att.is_suspicious %}
+                <span class="badge-tag-danger">{{ att.risk_reason or 'Dangerous Attachment' }}</span>
+                {% else %}
+                <span class="badge-tag-safe">Standard File</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="padding: 1.5rem; text-align: center; color: var(--slate-500); font-size: 0.88rem;">
+        No file attachments detected in this message.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Extracted URLs Table -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </svg>
+        Extracted Hyperlinks & Web Targets
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--slate-500); margin-left: 0.25rem;">({{ result.extracted_urls|length }})</span>
+      </h3>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      {% if result.extracted_urls %}
+      <div class="data-table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Visible Anchor Text</th>
+              <th>Destination URL</th>
+              <th>Target Host</th>
+              <th>Threat Flags</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in result.extracted_urls %}
+            <tr>
+              <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                {{ u.display_text or u.url }}
+              </td>
+              <td style="font-family: var(--font-mono); font-size: 0.8rem; word-break: break-all; max-width: 320px;">
+                {{ u.url }}
+              </td>
+              <td style="font-family: var(--font-mono);">{{ u.domain or 'Unknown' }}</td>
+              <td>
+                {% if u.is_deceptive %}
+                <span class="badge-tag-danger">Deceptive Link</span>
+                {% endif %}
+                {% if u.is_ip_based %}
+                <span class="badge-tag-danger">IP Address Host</span>
+                {% endif %}
+                {% if u.is_suspicious_tld %}
+                <span class="badge-tag-danger">Suspicious TLD</span>
+                {% endif %}
+                {% if u.is_shortener %}
+                <span class="badge-tag-danger">Shortener</span>
+                {% endif %}
+                {% if not u.is_deceptive and not u.is_ip_based and not u.is_suspicious_tld and not u.is_shortener %}
+                <span class="badge-tag-safe">Neutral Host</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="padding: 1.5rem; text-align: center; color: var(--slate-500); font-size: 0.88rem;">
+        No links or URLs were found in the message body.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Message Body Preview -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+          <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+        Parsed Message Body Excerpt
+      </h3>
+    </div>
+    <div class="card-body">
+      <div class="raw-textarea" style="background-color: var(--slate-50); height: 160px; overflow-y: auto; white-space: pre-wrap;" readonly>
+{{ result.body_excerpt }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Bar -->
+  <section class="report-action-bar">
+    <button type="button" class="btn-navy" onclick="scrollToAnalyzer()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 19V5M5 12l7-7 7 7"/>
+      </svg>
+      Scan Another Email
+    </button>
+    <div class="report-action-group">
+      <button type="button" class="btn-outline" onclick="copyReportToClipboard()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+        <span id="copyBtnText">Copy Report Summary</span>
+      </button>
+      <button type="button" class="btn-outline" onclick="downloadReportJson()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download JSON Report
+      </button>
+    </div>
+  </section>
+
+</section>
+{% endif %}
+
+<!-- 2. Dedicated Section: Score Threshold Categorization Guide -->
+<section class="threshold-guide-section" style="width: 100%; max-width: 100%; margin: 40px auto; box-sizing: border-box; text-align: left;">
+  <h2 class="guide-heading" style="text-align: center; color: #0f172a; margin-bottom: 24px;">Score Threshold Categorization Guide</h2>
+
+  <div class="score-guide-table-wrapper" style="width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; box-sizing: border-box;">
+    <table class="bordered-table" style="width: 100%; border-collapse: collapse; table-layout: auto; border: 2px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #ffffff;">
+      <thead>
+        <tr>
+          <th style="background-color: #0f172a; color: #ffffff; font-weight: bold; padding: 14px 18px; border: 1px solid #334155; width: 140px;">Status</th>
+          <th style="background-color: #0f172a; color: #ffffff; font-weight: bold; padding: 14px 18px; border: 1px solid #334155; width: 220px;">Category &amp; Score</th>
+          <th style="background-color: #0f172a; color: #ffffff; font-weight: bold; padding: 14px 18px; border: 1px solid #334155;">Key Detection Highlights</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="border: 1px solid #cbd5e1; padding: 14px 18px; vertical-align: top; font-size: 14px; line-height: 1.6;">
+            <strong>SAFE</strong><br>
+            <span style="display:inline-block; padding:4px 8px; border-radius:4px; font-weight:bold; background:#dcfce7; color:#166534; font-size:12px; margin-top:6px;">SAFE</span>
+          </td>
+          <td style="border: 1px solid #cbd5e1; padding: 14px 18px; vertical-align: top; font-size: 14px; line-height: 1.6;">
+            <strong>Legitimate (Safe)</strong><br>
+            <span style="color:#64748b;">Range: 0 – 24</span>
+          </td>
+          <td style="border: 1px solid #cbd5e1; padding: 14px 18px; vertical-align: top; font-size: 14px; line-height: 1.6;">
+            • <strong>SPF / DKIM / DMARC Pass:</strong> Cryptographic validation and host records verified.<br>
+            • <strong>Domain Alignment:</strong> Visible <code>From</code> address matches envelope <code>Return-Path</code>.<br>
+            • <strong>Authorized Relays:</strong> Message routed exclusively through legitimate mail transfer agents.<br>
+            • <strong>Clean Intent:</strong> Devoid of social engineering cues, suspicious redirects, or malicious attachments.
+          </td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #cbd5e1; padding: 14px 18px; vertical-align: top; font-size: 14px; line-height: 1.6;">
+            <strong>WARNING</strong><br>
+            <span style="display:inline-block; padding:4px 8px; border-radius:4px; font-weight:bold; background:#fef3c7; color:#92400e; font-size:12px; margin-top:6px;">WARNING</span>
+          </td>
+          <td style="border: 1px solid #cbd5e1; padding: 14px 18px; vertical-align: top; font-size: 14px; line-height: 1.6;">
+            <strong>Spam (Suspicious)</strong><br>
+            <span style="color:#64748b;">Range: 25 – 49</span>
+          </td>
+          <td style="border: 1px solid #cbd5e1; padding: 14px 18px; vertical-align: top; font-size: 14px; line-height: 1.6;">
+            • <strong>Bulk Signatures:</strong> Indicators of mass automated sending and marketing telemetry trackers.<br>
+            • <strong>Missing Authentication:</strong> Unsigned DKIM records or neutral SPF validation.<br>
+            • <strong>Repetitive Triggers:</strong> High frequency of promotional sales copy and unsolicited outreach patterns.<br>
+            • <strong>Minor Route Anomalies:</strong> Non-standard relay hops without explicit malicious payloads.
+          </td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #cbd5e1; padding: 14px 18px; vertical-align: top; font-size: 14px; line-height: 1.6;">
+            <strong>CRITICAL</strong><br>
+            <span style="display:inline-block; padding:4px 8px; border-radius:4px; font-weight:bold; background:#fee2e2; color:#991b1b; font-size:12px; margin-top:6px;">CRITICAL</span>
+          </td>
+          <td style="border: 1px solid #cbd5e1; padding: 14px 18px; vertical-align: top; font-size: 14px; line-height: 1.6;">
+            <strong>Phishing (High Risk)</strong><br>
+            <span style="color:#64748b;">Range: 50 – 100</span>
+          </td>
+          <td style="border: 1px solid #cbd5e1; padding: 14px 18px; vertical-align: top; font-size: 14px; line-height: 1.6;">
+            • <strong>Authentication Failure:</strong> Outright SPF or DMARC failure (<code>fail</code>/<code>reject</code>).<br>
+            • <strong>Header Spoofing:</strong> Direct mismatch between displayed brand and underlying sender path.<br>
+            • <strong>Credential Traps:</strong> Embedded URLs pointing to obfuscated IP hosts or lookalike typosquat domains.<br>
+            • <strong>Dangerous Payloads:</strong> High-risk attachments including <code>.exe</code>, <code>.scr</code>, <code>.bat</code>, or weaponized macros.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Section 2: What Is an Email Header Analyzer? -->
+<section class="explainer-navy-card" style="width: 100%; max-width: 100%; margin: 40px auto; box-sizing: border-box; background: #0f172a; border: 2px solid #334155; border-radius: 10px; padding: 40px 32px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); color: #ffffff; text-align: center;">
+  <h2 class="explainer-heading" style="font-size: 24px; font-weight: 700; margin-bottom: 20px; color: #ffffff; text-align: center;">What Is an Email Header Analyzer?</h2>
+  <p class="explainer-paragraph" style="color: #ffffff; text-align: center; margin-bottom: 18px;">
+    Every email transmitted across the internet carries a hidden record of technical metadata known as the email header. While standard email clients display only the visible sender, recipient, and subject, the raw header documents the entire journey of the transmission—including server IP hops, routing timestamps, and cryptographic authentication records designed to verify origin.
+  </p>
+  <p class="explainer-paragraph" style="color: #ffffff; text-align: center; margin-bottom: 18px;">
+    An email header analyzer automatically parses and evaluates this dense block of raw code, translating low-level technical parameters into intelligible security verdicts. It rigorously interrogates essential authentication protocols—including SPF (Sender Policy Framework), DKIM (DomainKeys Identified Mail), and DMARC (Domain-based Message Authentication)—to verify whether the sending server held legitimate authority to send mail on behalf of that domain.
+  </p>
+  <p class="explainer-paragraph" style="color: #ffffff; text-align: center; margin-bottom: 0;">
+    By inspecting envelope return paths against displayed sender identities, detecting unverified relay infrastructure, and surfacing deceptive domain variations, an email header analyzer provides security analysts and administrators with the forensic clarity needed to isolate spear-phishing attacks, business email compromise (BEC), and spoofed scams before they compromise organizational networks.
+  </p>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Accordion Toggle for raw text
+  function toggleAccordion(forceOpen = false) {
+    const content = document.getElementById('accordionContent');
+    const arrow = document.getElementById('accordionArrow');
+    if (forceOpen || !content.classList.contains('expanded')) {
+      content.classList.add('expanded');
+      arrow.innerHTML = '&uarr;';
+    } else {
+      content.classList.remove('expanded');
+      arrow.innerHTML = '&darr;';
+    }
+  }
+
+  // Dropzone drag-and-drop
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('emailFileInput');
+  const fileIndicator = document.getElementById('fileIndicator');
+
+  if (dropzone && fileInput) {
+    ['dragenter', 'dragover'].forEach(name => {
+      dropzone.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(name => {
+      dropzone.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+      });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+        showFile(fileInput.files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files && fileInput.files.length > 0) {
+        showFile(fileInput.files[0]);
+      }
+    });
+  }
+
+  function showFile(file) {
+    if (fileIndicator) {
+      const sizeKb = (file.size / 1024).toFixed(1);
+      fileIndicator.style.display = 'inline-block';
+      fileIndicator.textContent = `Selected: ${file.name} (${sizeKb} KB)`;
+    }
+    const textarea = document.getElementById('rawEmailTextarea');
+    if (textarea) textarea.value = '';
+  }
+
+  // Quick load sample email
+  async function loadSample(sampleId) {
+    try {
+      const res = await fetch('/api/sample/' + sampleId);
+      if (!res.ok) throw new Error('Sample not found');
+      const data = await res.json();
+      
+      toggleAccordion(true);
+      const textarea = document.getElementById('rawEmailTextarea');
+      if (textarea) {
+        textarea.value = data.content;
+        textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      if (fileInput) fileInput.value = '';
+      if (fileIndicator) fileIndicator.style.display = 'none';
+    } catch (err) {
+      alert('Could not load sample: ' + err.message);
+    }
+  }
+
+  // Clear inputs
+  function clearInputs() {
+    if (fileInput) fileInput.value = '';
+    if (fileIndicator) fileIndicator.style.display = 'none';
+    const textarea = document.getElementById('rawEmailTextarea');
+    if (textarea) textarea.value = '';
+  }
+
+  // Scroll to analyzer card
+  function scrollToAnalyzer() {
+    clearInputs();
+    const analyzer = document.getElementById('analyzerCard');
+    if (analyzer) {
+      analyzer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  // Loading state on submit
+  function handleFormSubmit() {
+    const btn = document.getElementById('scanBtn');
+    const spinner = document.getElementById('submitSpinner');
+    const icon = document.getElementById('submitIcon');
+    const text = document.getElementById('btnText');
+    if (btn && spinner && icon && text) {
+      btn.disabled = true;
+      spinner.style.display = 'inline-block';
+      icon.style.display = 'none';
+      text.textContent = 'Scanning...';
+    }
+  }
+
+  // Auto-scroll to results if present
+  window.addEventListener('DOMContentLoaded', () => {
+    const results = document.getElementById('results');
+    if (results) {
+      results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+
+  {% if result %}
+  const reportData = {
+    verdict: "{{ result.verdict }}",
+    threat_score: {{ result.threat_score }},
+    threat_level: "{{ result.threat_level }}",
+    rationale: `{{ result.rationale }}`,
+    headers: {{ result.headers|tojson }},
+    auth_status: {{ result.auth_status|tojson }},
+    red_flags: [
+      {% for f in result.red_flags %}
+      { title: "{{ f.title }}", severity: "{{ f.severity }}", points: {{ f.points }}, description: `{{ f.description }}` },
+      {% endfor %}
+    ],
+    attachments_count: {{ result.attachments|length }},
+    urls_count: {{ result.extracted_urls|length }}
+  };
+
+  function copyReportToClipboard() {
+    const summaryText = `SECUREMAIL THREAT REPORT
+=================================
+Verdict: ${reportData.verdict}
+Threat Score: ${reportData.threat_score} / 100 (${reportData.threat_level})
+Rationale: ${reportData.rationale}
+
+HEADERS
+From: ${reportData.headers.From}
+Return-Path: ${reportData.headers['Return-Path']}
+Subject: ${reportData.headers.Subject}
+Authentication: SPF=${reportData.auth_status.spf.toUpperCase()}, DKIM=${reportData.auth_status.dkim.toUpperCase()}, DMARC=${reportData.auth_status.dmarc.toUpperCase()}
+
+SECURITY RED FLAGS (${reportData.red_flags.length}):
+${reportData.red_flags.map(f => ` - [${f.severity}] ${f.title} (+${f.points} pts): ${f.description}`).join('\n') || 'None'}
+`;
+    navigator.clipboard.writeText(summaryText).then(() => {
+      const btnText = document.getElementById('copyBtnText');
+      btnText.textContent = 'Copied to Clipboard!';
+      setTimeout(() => { btnText.textContent = 'Copy Report Summary'; }, 2000);
+    }).catch(err => {
+      alert('Failed to copy: ' + err);
+    });
+  }
+
+  function downloadReportJson() {
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `securemail_report_${reportData.verdict.toLowerCase()}_${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  {% endif %}
+</script>
+{% endblock %}

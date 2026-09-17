@@ -1,0 +1,31 @@
+From: "PayPal Security Center" <service@paypal-verification-portal.xyz>
+To: member@example.com
+Subject: URGENT: Unauthorized Login Detected - Account Locked
+Date: Tue, 15 Sep 2026 13:00:00 +0000
+Message-ID: <sec.99812@paypal-verification-portal.xyz>
+Return-Path: <bounce@unrelated-malicious-relay.top>
+Authentication-Results: mx.example.com;
+    spf=fail smtp.mailfrom=bounce@unrelated-malicious-relay.top;
+    dkim=fail header.i=@paypal-verification-portal.xyz;
+    dmarc=fail action=reject header.from=paypal-verification-portal.xyz
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<body>
+  <div style="font-family: Arial, sans-serif;">
+    <h2 style="color: #b91c1c;">Urgent Action Required: Account Suspended</h2>
+    <p>Dear Valued Member,</p>
+    <p>We have detected suspicious unauthorized access attempts to your account from an unrecognized device.</p>
+    <p><strong>Your account has been suspended</strong> to prevent unauthorized financial withdrawals.</p>
+    <p>You must verify your account credentials within 24 hours to avoid permanent closure:</p>
+    <p>
+      <!-- Deceptive anchor text: visible text says paypal.com, href destination points to an IP address -->
+      <a href="http://198.51.100.42/paypal/login.php">https://www.paypal.com/signin/verify-identity</a>
+    </p>
+    <p>Failure to respond within 24 hours will result in permanent account termination and forfeiture of balance.</p>
+    <p>PayPal Security Team</p>
+  </div>
+</body>
+</html>

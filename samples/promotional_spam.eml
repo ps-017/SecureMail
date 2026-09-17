@@ -1,0 +1,23 @@
+From: "Mega Jackpots" <win@casino-rewards.buzz>
+To: target@example.com
+Subject: Congratulations! You won a 100% Free Gift and Prize!
+Date: Tue, 15 Sep 2026 15:00:00 +0000
+Message-ID: <promo-9938@casino-rewards.buzz>
+Return-Path: <win@casino-rewards.buzz>
+Authentication-Results: mx.example.com;
+    spf=pass smtp.mailfrom=win@casino-rewards.buzz;
+    dkim=pass header.i=@casino-rewards.buzz;
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html>
+<body>
+  <h2>Claim your prize today!</h2>
+  <p>Make money fast with exclusive jackpot bonus opportunities. Claim your prize now!</p>
+  <p><a href="http://casino-rewards.buzz/bonus">Claim $1,000 Bonus Cash</a></p>
+  <p style="font-size: 11px; color: #777;">
+    To stop receiving offers, <a href="http://casino-rewards.buzz/unsubscribe">unsubscribe here</a>.
+  </p>
+</body>
+</html>
